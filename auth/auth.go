@@ -23,43 +23,36 @@ var store = sessions.NewCookieStore([]byte(RandomString(32)))
  */
 var sessionIDs = make(map[string]int)
 
-func isConnected(session *sessions.Session) bool {
-	sessionID := session.Values["sessionID"].(string)
-	_, existsID := sessionIDs[sessionID]
-	return existsID
+func IsConnected(session *sessions.Session) bool {
+	if receipt, ok := session.Values["receipt"].(string); ok {
+		if _, existsID := sessionIDs[receipt]; !existsID {
+			return true
+		}
+	}
+	return false
 }
 
 func Connect(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "session-name")
-	if err != nil {
-		log.Println("error fetching session: ", err)
-		return
-	}
+	session, _ := store.Get(r, "session-name")
 
-	if r.FormValue("state") != session.Values["state"].(string) {
-		return
-	}
-
-	sessionID := session.Values["sessionID"].(string)
-	if _, existsID := sessionIDs[sessionID]; !existsID {
-		log.Println("Session already exists")
+	if IsConnected(session) {
+		http.Redirect(w, r, "backend/manage", http.StatusFound)
 		return
 	}
 
 	// TODO: remove hard coding on this to actually be usable in the real world
-	if r.FormValue("username") != "gohst" ||
-		r.FormValue("password") != "thisisareallybadpassword" {
-		log.Println("Wrong credentials used %s, %s",
-			r.FormValue("username"), r.FormValue("password"))
+	if r.FormValue("username") != "gohst" || r.FormValue("password") != "thisisareallybadpassword" {
+		log.Printf("Wrong credentials used %s and %s", r.FormValue("username"), r.FormValue("password"))
+		http.Redirect(w, r, "backend", http.StatusFound)
 		return
 	}
 
+	log.Printf("Correct credentials used!")
 	thisSession := RandomString(32)
 	sessionIDs[thisSession] = 1
-
-	session.Values["sessionID"] = thisSession
+	session.Values["receipt"] = thisSession
 	session.Save(r, w)
-	log.Println("login successful")
+	http.Redirect(w, r, "backend/manage", http.StatusFound)
 }
 
 /**
@@ -67,13 +60,9 @@ func Connect(w http.ResponseWriter, r *http.Request) {
  * to delete the client's cookie
  */
 func Disconnect(w http.ResponseWriter, r *http.Request) {
-	session, err := store.Get(r, "session-name")
-	if err != nil {
-		log.Println("error fetching session: ", err)
-		return
-	}
-	session.Values["sessionID"] = nil
-	session.Values["state"] = nil
+	session, _ := store.Get(r, "session-name")
+
+	session.Values["receipt"] = nil
 	return
 }
 
@@ -84,7 +73,7 @@ func RandomString(length int) (str string) {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func base64Decode(s string) ([]byte, error) {
+func decodeBase64(s string) ([]byte, error) {
 	// add back missing padding
 	switch len(s) % 4 {
 	case 2:

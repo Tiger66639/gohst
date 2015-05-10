@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/http/fcgi"
 
-	"cosban/auth"
-	"cosban/web"
+	"github.com/cosban/gohst/auth"
+	"github.com/cosban/gohst/web"
 )
 
 func main() {
