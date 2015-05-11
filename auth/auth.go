@@ -14,7 +14,7 @@ import (
  * If the client doesn't have this, or if it has a different one,
  * a new cookie will then need to be generated for them.
  */
-var store = sessions.NewCookieStore([]byte(RandomString(32)))
+var store = sessions.NewCookieStore([]byte(randomString(32)))
 
 /**
  * Represent the IDs of logged in sessions.
@@ -49,17 +49,15 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("username") != "gohst" || r.FormValue("password") != "thisisareallybadpassword" {
 		log.Printf("invalid login attempt")
 	} else {
-		receipt := RandomString(32)
+		receipt := randomString(32)
 		sessionIDs[receipt] = 1
 		session.Values["receipt"] = receipt
 		session.Save(r, w)
-		log.Printf("Login successful...")
 		// on success we don't want to to the login page again...
 		if title == "login" {
 			title = "backend/manage"
 		}
 	}
-	log.Printf("redirecting to %s", title)
 	http.Redirect(w, r, title, http.StatusFound)
 }
 
@@ -78,7 +76,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 }
 
 // randomString returns a random string with the specified length
-func RandomString(length int) (str string) {
+func randomString(length int) (str string) {
 	b := make([]byte, length)
 	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)

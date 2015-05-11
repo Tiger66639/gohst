@@ -1,8 +1,12 @@
 # gohst
 > A webhosting platform powered by golang
 
-Created for the sake of education and memes
-##Installation & Running
+Created for the sake of learning and memes
+
+## Installation & Running
+>Prerequisite: go must be installed and nginx or apache must listen for fgcgi
+on port 8000
+
 To install, simply run the following
 
     $ go get github.com/cosban/gohst
@@ -31,4 +35,4 @@ following pattern
         base.html # The base template which all others are rendered through
         home.html # This is the web app's home page
 
-###TODO: Example gohst web app link et al
+### TODO: Example gohst web app link et al
