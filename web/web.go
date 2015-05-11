@@ -80,12 +80,14 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
  * with the most updated html template.
  */
 func DevHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/dev/"):]
+	title := r.URL.Path[len("/dev"):]
 	if auth.IsConnected(r) {
-		delete(pages, "./templates/"+title+".html")
+		delete(pages, "./templates"+title+".html")
+		p := LoadPage(w, title)
+		RenderTemplate(w, p.Filename)
+	} else {
+		http.Redirect(w, r, title, http.StatusFound)
 	}
-	p := LoadPage(w, title)
-	RenderTemplate(w, p.Filename)
 }
 
 /**
