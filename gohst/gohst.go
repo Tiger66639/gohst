@@ -11,7 +11,7 @@ import (
 
 func main() {
 	l, _ := net.Listen("tcp", "127.0.0.1:8000")
-	//TODO: remove directory listing from this
+
 	http.HandleFunc("/", web.PageHandler)
 	http.HandleFunc("/static/", web.StaticHandler)
 	http.HandleFunc("/txt/", web.TxtHandler)

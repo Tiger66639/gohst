@@ -74,7 +74,7 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Options.MaxAge = -1
 	session.Save(r, w)
-	return
+	http.Redirect(w, r, "", http.StatusFound)
 }
 
 // randomString returns a random string with the specified length

@@ -22,11 +22,10 @@ type Page struct {
 	Template *template.Template
 	// A byte array of the body
 	Body []byte
-	// strings needed in order for oauth to work
-	// TODO: understand this better
-	ClientID, State, Scope string
-	// AccessToken needed for cookies
-	AccessToken string
+	// Whether the page is enabled or not
+	Disabled bool
+	// oauth specific params
+	ClientID, State, Scope, AccessToken string
 }
 
 /**
@@ -57,7 +56,12 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	if len(title) == 0 {
 		title = "home"
 	}
-	p := LoadPage(w, title)
+	var p *Page
+	if title == "base" {
+		p = OnError(w)
+	} else {
+		p = LoadPage(w, title)
+	}
 	RenderTemplate(w, p.Filename)
 }
 
@@ -99,11 +103,14 @@ func DevHandler(w http.ResponseWriter, r *http.Request) {
  */
 func LoadPage(w http.ResponseWriter, title string) *Page {
 	filename := "./templates/" + title + ".html"
-	if strings.Contains(title, "page/") {
-		title = title[len("page/"):]
+	if strings.Contains(title, "/") {
+		title = title[strings.LastIndex(title, "/")+1:]
 	}
 	// if the page is inside the cache, just load it
 	if page, ok := pages[filename]; ok {
+		if page.Disabled {
+			return OnError(w)
+		}
 		return page
 	}
 	// the page is not inside the cache so see if it exists
