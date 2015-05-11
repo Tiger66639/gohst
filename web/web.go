@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/cosban/gohst/auth"
 )
 
 /**
@@ -59,13 +62,28 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
+ * Handler used when authentication is required to load a page
+ */
+func AuthHandler(w http.ResponseWriter, r *http.Request) {
+	if auth.IsConnected(r) {
+		log.Printf("Found a valid receipt")
+		PageHandler(w, r)
+		return
+	}
+	log.Printf("No valid receipt found")
+	login := LoadPage(w, "login")
+	RenderTemplate(w, login.Filename)
+}
+
+/**
  * In the event that /dev is placed within the url, this refreshes the cache
  * with the most updated html template.
- * TODO: This system should require authentiction to use
  */
 func DevHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/dev/"):]
-	delete(pages, "./templates/"+title+".html")
+	if auth.IsConnected(r) {
+		delete(pages, "./templates/"+title+".html")
+	}
 	p := LoadPage(w, title)
 	RenderTemplate(w, p.Filename)
 }

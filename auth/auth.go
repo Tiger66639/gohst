@@ -23,36 +23,44 @@ var store = sessions.NewCookieStore([]byte(RandomString(32)))
  */
 var sessionIDs = make(map[string]int)
 
-func IsConnected(session *sessions.Session) bool {
+/**
+ * Returns true if a valid session is present
+ */
+func IsConnected(r *http.Request) bool {
+	session, _ := store.Get(r, "session-name")
 	if receipt, ok := session.Values["receipt"].(string); ok {
-		if _, existsID := sessionIDs[receipt]; !existsID {
+		if _, existsID := sessionIDs[receipt]; existsID {
+			log.Printf("receipt found: %s", receipt)
 			return true
 		}
+		log.Printf("Invalid receipt found: %s, in %v", receipt, sessionIDs)
 	}
 	return false
 }
 
+/**
+ * Creates a valid session if the correct authentication params
+ * are provided
+ */
 func Connect(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session-name")
-
-	if IsConnected(session) {
-		http.Redirect(w, r, "backend/manage", http.StatusFound)
-		return
-	}
-
+	title := r.FormValue("redirect")
 	// TODO: remove hard coding on this to actually be usable in the real world
 	if r.FormValue("username") != "gohst" || r.FormValue("password") != "thisisareallybadpassword" {
-		log.Printf("Wrong credentials used %s and %s", r.FormValue("username"), r.FormValue("password"))
-		http.Redirect(w, r, "backend", http.StatusFound)
-		return
+		log.Printf("invalid login attempt")
+	} else {
+		receipt := RandomString(32)
+		sessionIDs[receipt] = 1
+		session.Values["receipt"] = receipt
+		session.Save(r, w)
+		log.Printf("Login successful...")
+		// on success we don't want to to the login page again...
+		if title == "login" {
+			title = "backend/manage"
+		}
 	}
-
-	log.Printf("Correct credentials used!")
-	thisSession := RandomString(32)
-	sessionIDs[thisSession] = 1
-	session.Values["receipt"] = thisSession
-	session.Save(r, w)
-	http.Redirect(w, r, "backend/manage", http.StatusFound)
+	log.Printf("redirecting to %s", title)
+	http.Redirect(w, r, title, http.StatusFound)
 }
 
 /**
@@ -61,8 +69,11 @@ func Connect(w http.ResponseWriter, r *http.Request) {
  */
 func Disconnect(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session-name")
-
-	session.Values["receipt"] = nil
+	if receipt, ok := session.Values["receipt"].(string); ok {
+		delete(sessionIDs, receipt)
+	}
+	session.Options.MaxAge = -1
+	session.Save(r, w)
 	return
 }
 
