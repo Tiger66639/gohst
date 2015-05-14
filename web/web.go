@@ -23,6 +23,8 @@ type Page struct {
 	Body []byte
 	// Whether the page is enabled or not
 	Disabled bool
+	// Additional information needed for this page
+	Info Params
 	// oauth specific params
 	ClientID, State, Scope, AccessToken string
 }
@@ -104,6 +106,7 @@ func LoadPage(w http.ResponseWriter, title string) *Page {
 	if strings.Contains(title, "/") {
 		title = title[strings.LastIndex(title, "/")+1:]
 	}
+
 	// if the page is inside the cache, just load it
 	if page, ok := pages[filename]; ok {
 		if page.Disabled {
@@ -111,12 +114,13 @@ func LoadPage(w http.ResponseWriter, title string) *Page {
 		}
 		return page
 	}
+
 	// the page is not inside the cache so see if it exists
 	body, err := ioutil.ReadFile(filename)
-	// throw a 404 error
 	if err != nil {
 		return OnError(w)
 	}
+
 	// page exists add it to the cache
 	tmpl := template.Must(template.ParseFiles(filename, "templates/base.html"))
 	pages[filename] = &Page{Title: title, Filename: filename, Template: tmpl, Body: body}
@@ -153,6 +157,19 @@ func Loadtxt(w http.ResponseWriter, title string) (*Page, error) {
  */
 func RenderTemplate(w http.ResponseWriter, name string) {
 	pages[name].Template.ExecuteTemplate(w, "base", pages[name])
+}
+
+/**
+ * Loads a blank page
+ */
+func BlankPage(w http.ResponseWriter) *Page {
+	if page, ok := pages["blank"]; ok {
+		LoadPage(w, "blank")
+		return page
+	}
+	tmpl := template.Must(template.ParseFiles("templates/base.html"))
+	pages["blank"] = &Page{Title: "", Filename: "", Template: tmpl, Body: []byte("")}
+	return pages["blank"]
 }
 
 /**

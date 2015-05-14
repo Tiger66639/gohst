@@ -30,10 +30,8 @@ func IsConnected(r *http.Request) bool {
 	session, _ := store.Get(r, "session-name")
 	if receipt, ok := session.Values["receipt"].(string); ok {
 		if _, existsID := sessionIDs[receipt]; existsID {
-			log.Printf("receipt found: %s", receipt)
 			return true
 		}
-		log.Printf("Invalid receipt found: %s, in %v", receipt, sessionIDs)
 	}
 	return false
 }

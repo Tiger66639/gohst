@@ -17,7 +17,7 @@ func main() {
 	http.HandleFunc("/txt/", web.TxtHandler)
 	http.HandleFunc("/dev/", web.DevHandler)
 
-	http.HandleFunc("/backend/", web.AuthHandler)
+	http.HandleFunc("/backend/", web.BackendHandler)
 	http.HandleFunc("/connect", auth.Connect)
 	http.HandleFunc("/disconnect", auth.Disconnect)
 
