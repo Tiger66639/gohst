@@ -159,6 +159,10 @@ func RenderTemplate(w http.ResponseWriter, name string) {
 	pages[name].Template.ExecuteTemplate(w, "base", pages[name])
 }
 
+func BaseTemplate() *template.Template {
+	return template.Must(template.New("base").Parse("/templates/base.hmtl"))
+}
+
 /**
  * Loads a blank page
  */

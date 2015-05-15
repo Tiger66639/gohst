@@ -27,16 +27,26 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := LoadPage(w, title)
 	switch title[len("backend/"):] {
 	case "edit":
+		p := LoadPage(w, title)
 		toLoad := r.FormValue("p")
 		formPage := loadPageForEdit(w, toLoad)
-		p.Info = Params{formPage.Title, formPage.Body}
-		log.Printf("Additional page info loaded for %s with \n%s", formPage.Info.Title, formPage.Info.Body)
+		p.Info = Params{toLoad, formPage.Body}
 		RenderTemplate(w, p.Filename)
 		break
+	case "edit/submit":
+		formURL := r.FormValue("p")
+		formPage := loadPageForEdit(w, formURL)
+		formPage.Body = []byte(r.FormValue("body"))
+		formPage.Template = template.Must(template.New(formPage.Filename).Parse(string(formPage.Body)))
+		formPage.Template = template.Must(formPage.Template.ParseFiles("templates/base.html"))
+		pages[formPage.Filename] = formPage
+		http.Redirect(w, r, "/backend/manage", http.StatusFound)
+		log.Printf("SECOND\n%s", formPage.Template)
+		break
 	case "manage":
+		p := LoadPage(w, title)
 		RenderTemplate(w, p.Filename)
 		break
 	}
