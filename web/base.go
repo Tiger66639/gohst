@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,7 +28,7 @@ type Page struct {
 	Disabled bool
 }
 
-const baseLocation string = "templates/shared/base.html"
+const sharedLocation string = "templates/shared/"
 const pageLocation string = "templates/public/"
 
 // pages is a map of pages keyed by the location of the page.
@@ -37,6 +38,7 @@ var pages = make(map[string]*Page)
 // RenderTemplate executes templates which have been stored within the pages map
 func RenderTemplate(w http.ResponseWriter, page *Page) {
 	page.Template.ExecuteTemplate(w, "base", page)
+	fmt.Printf(string(page.Body))
 }
 
 // AuthHandler is used to verify that a client is logged in.
@@ -79,7 +81,7 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func baseTemplate() *template.Template {
-	return template.Must(template.New("base").Parse(baseLocation))
+	return template.Must(template.ParseFiles(sharedLocation + "base.html"))
 }
 
 // Checks if the file is within the cache, returning from it if s
@@ -108,7 +110,7 @@ func loadPage(w http.ResponseWriter, title string) *Page {
 	}
 
 	// page exists add it to the cache
-	tmpl := template.Must(template.ParseFiles(filename, baseLocation))
+	tmpl := template.Must(template.ParseFiles(filename, sharedLocation+"base.html"))
 	pages[filename] = &Page{Title: title, Template: tmpl, Body: body}
 	return pages[filename]
 }
@@ -127,7 +129,7 @@ func BlankPage(w http.ResponseWriter) *Page {
 		loadPage(w, "blank")
 		return page
 	}
-	tmpl := template.Must(template.ParseFiles(baseLocation))
+	tmpl := template.Must(template.ParseFiles(sharedLocation + "base.html"))
 	pages["blank"] = &Page{Title: "", Template: tmpl, Body: []byte("")}
 	return pages["blank"]
 }
@@ -138,12 +140,12 @@ func BlankPage(w http.ResponseWriter) *Page {
 // page
 func DevHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/dev/"):]
-	if auth.IsConnected(r) {
-		delete(pages, pageLocation+title+".html")
-		p := loadPage(w, title)
-		RenderTemplate(w, p)
-	} else {
-		title = "/" + title
-		http.Redirect(w, r, title, http.StatusFound)
-	}
+	//	if auth.IsConnected(r) {
+	delete(pages, pageLocation+title+".html")
+	p := loadPage(w, title)
+	RenderTemplate(w, p)
+	//	} else {
+	//		title = "/" + title
+	//		http.Redirect(w, r, title, http.StatusFound)
+	//	}
 }
