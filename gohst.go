@@ -16,8 +16,8 @@ func main() {
 	http.HandleFunc("/static/", web.StaticHandler)
 	http.HandleFunc("/txt/", web.RawHandler)
 	http.HandleFunc("/dev/", web.DevHandler)
+	http.HandleFunc("/backend/", web.BackendHandler)
 
-	//	http.HandleFunc("/backend/", web.BackendHandler)
 	http.HandleFunc("/connect", auth.Connect)
 	http.HandleFunc("/disconnect", auth.Disconnect)
 

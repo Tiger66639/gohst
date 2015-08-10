@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -24,6 +23,8 @@ type Page struct {
 	Template *template.Template
 	// A byte array of the body
 	Body []byte
+	// Info is an interface which allows for additional data to be fed into pages
+	Info interface{}
 	// Whether the page is enabled or not
 	Disabled, LoggedIn bool
 }
@@ -38,7 +39,6 @@ var pages = make(map[string]*Page)
 // RenderTemplate executes templates which have been stored within the pages map
 func RenderTemplate(w http.ResponseWriter, page *Page) {
 	page.Template.ExecuteTemplate(w, "base", page)
-	fmt.Printf(string(page.Body))
 }
 
 // AuthHandler is used to verify that a client is logged in.
@@ -50,7 +50,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		PageHandler(w, r)
 		return
 	}
-	RenderTemplate(w, loadPage(w, "login"))
+	RenderTemplate(w, LoadPage(w, pageLocation, "login"))
 }
 
 // StaticHandler provides a way for static content to be served to clients.
@@ -73,9 +73,9 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var p *Page
 	if title == "base" {
-		p = OnError(w)
+		p = OnError(w, 404)
 	} else {
-		p = loadPage(w, title)
+		p = LoadPage(w, pageLocation, title)
 	}
 	p.LoggedIn = auth.IsConnected(r)
 	RenderTemplate(w, p)
@@ -85,13 +85,13 @@ func baseTemplate() *template.Template {
 	return template.Must(template.ParseFiles(sharedLocation + "base.html"))
 }
 
-// Checks if the file is within the cache, returning from it if s
+// LoadPage checks if the file is within the cache, returning from it if s
 // If not, it checks whether the file exists and saves it to the cache
 // while also returning it.
 // If the file does not exist, a 404 error is thrown and the 404 page is
 // rendered.
-func loadPage(w http.ResponseWriter, title string) *Page {
-	filename := pageLocation + title + ".html"
+func LoadPage(w http.ResponseWriter, location string, title string) *Page {
+	filename := location + title + ".html"
 	if strings.Contains(title, "/") {
 		title = title[strings.LastIndex(title, "/")+1:]
 	}
@@ -99,7 +99,7 @@ func loadPage(w http.ResponseWriter, title string) *Page {
 	// if the page is inside the cache, just load it
 	if page, ok := pages[filename]; ok {
 		if page.Disabled {
-			return OnError(w)
+			return OnError(w, 404)
 		}
 		return page
 	}
@@ -107,7 +107,7 @@ func loadPage(w http.ResponseWriter, title string) *Page {
 	// the page is not inside the cache so see if it exists
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return OnError(w)
+		return OnError(w, 404)
 	}
 
 	// page exists add it to the cache
@@ -116,18 +116,10 @@ func loadPage(w http.ResponseWriter, title string) *Page {
 	return pages[filename]
 }
 
-// OnError is called whenever a file page can not be found. Currently this only
-// serves a 404 request.
-// TODO: handle more than just 404 errors
-func OnError(w http.ResponseWriter) *Page {
-	w.WriteHeader(404)
-	return loadPage(w, "404")
-}
-
 // BlankPage is used to load just the shared "mega" template
 func BlankPage(w http.ResponseWriter) *Page {
 	if page, ok := pages["blank"]; ok {
-		loadPage(w, "blank")
+		LoadPage(w, pageLocation, "blank")
 		return page
 	}
 	tmpl := template.Must(template.ParseFiles(sharedLocation + "base.html"))
@@ -143,7 +135,7 @@ func DevHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/dev/"):]
 	//	if auth.IsConnected(r) {
 	delete(pages, pageLocation+title+".html")
-	p := loadPage(w, title)
+	p := LoadPage(w, pageLocation, title)
 	RenderTemplate(w, p)
 	//	} else {
 	//		title = "/" + title
