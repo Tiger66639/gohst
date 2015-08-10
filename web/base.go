@@ -25,7 +25,7 @@ type Page struct {
 	// A byte array of the body
 	Body []byte
 	// Whether the page is enabled or not
-	Disabled bool
+	Disabled, LoggedIn bool
 }
 
 const sharedLocation string = "templates/shared/"
@@ -77,6 +77,7 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		p = loadPage(w, title)
 	}
+	p.LoggedIn = auth.IsConnected(r)
 	RenderTemplate(w, p)
 }
 
