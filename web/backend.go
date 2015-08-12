@@ -10,6 +10,8 @@ import (
 	"github.com/cosban/gohst/auth"
 )
 
+const backendLocation = "templates/backend/"
+
 // EditParams is a struct which holds the info needed to load a page into the
 // page editor
 type EditParams struct {
@@ -19,21 +21,22 @@ type EditParams struct {
 
 // BackendHandler is used to route backend specific pages
 func BackendHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/"):]
+	title := r.URL.Path[len("/backend/"):]
 	log.Printf(title)
 
 	if !auth.IsConnected(r) {
-		login := LoadPage(w, "backend", "login")
+		login := LoadPage(w, PageLocation, "login")
 		RenderTemplate(w, login)
 		return
 	}
 
-	switch title[len("backend/"):] {
+	switch title {
 	case "edit":
-		p := LoadPage(w, "backend", title)
+		p := LoadPage(w, backendLocation, title)
 		toLoad := r.FormValue("p")
 		formPage := loadPageForEdit(w, toLoad)
 		p.Info = EditParams{toLoad, formPage.Body}
+		p.LoggedIn = true
 		RenderTemplate(w, p)
 		break
 	case "edit/submit":
@@ -44,10 +47,15 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 		formPage.Template = template.Must(formPage.Template.ParseFiles("templates/base.html"))
 		pages[title] = formPage
 		http.Redirect(w, r, "/backend/manage", http.StatusFound)
-		log.Printf("SECOND\n%s", formPage.Template)
 		break
 	case "manage":
-		p := LoadPage(w, "backend", title)
+		p := LoadPage(w, backendLocation, title)
+		p.LoggedIn = true
+		RenderTemplate(w, p)
+		break
+	default:
+		p := LoadPage(w, backendLocation, "manage")
+		p.LoggedIn = true
 		RenderTemplate(w, p)
 		break
 	}
@@ -61,7 +69,7 @@ func loadPageForEdit(w http.ResponseWriter, title string) *Page {
 		return BlankPage(w)
 	}
 
-	filename := "./templates/" + title + ".html"
+	filename := PageLocation + title + ".html"
 	if strings.Contains(title, "/") {
 		title = title[strings.LastIndex(title, "/")+1:]
 	}
@@ -76,7 +84,7 @@ func loadPageForEdit(w http.ResponseWriter, title string) *Page {
 	}
 
 	// page exists add it to the cache
-	tmpl := template.Must(template.ParseFiles(filename, "templates/base.html"))
+	tmpl := template.Must(template.ParseFiles(filename, SharedLocation+"/base.html"))
 	pages[filename] = &Page{Title: title, Template: tmpl, Body: body}
 	return pages[filename]
 }

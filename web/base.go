@@ -29,8 +29,11 @@ type Page struct {
 	Disabled, LoggedIn bool
 }
 
-const sharedLocation string = "templates/shared/"
-const pageLocation string = "templates/public/"
+// SharedLocation is where shared templates are (errors, base, etc)
+const SharedLocation string = "templates/shared/"
+
+// PageLocation is where public templates are
+const PageLocation string = "templates/public/"
 
 // pages is a map of pages keyed by the location of the page.
 // The "home" page, would be keyed as ""/templates/public/home" for instance.
@@ -50,7 +53,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		PageHandler(w, r)
 		return
 	}
-	RenderTemplate(w, LoadPage(w, pageLocation, "login"))
+	RenderTemplate(w, LoadPage(w, PageLocation, "login"))
 }
 
 // StaticHandler provides a way for static content to be served to clients.
@@ -75,14 +78,14 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	if title == "base" {
 		p = OnError(w, 404)
 	} else {
-		p = LoadPage(w, pageLocation, title)
+		p = LoadPage(w, PageLocation, title)
 	}
 	p.LoggedIn = auth.IsConnected(r)
 	RenderTemplate(w, p)
 }
 
 func baseTemplate() *template.Template {
-	return template.Must(template.ParseFiles(sharedLocation + "base.html"))
+	return template.Must(template.ParseFiles(SharedLocation + "base.html"))
 }
 
 // LoadPage checks if the file is within the cache, returning from it if s
@@ -111,7 +114,7 @@ func LoadPage(w http.ResponseWriter, location string, title string) *Page {
 	}
 
 	// page exists add it to the cache
-	tmpl := template.Must(template.ParseFiles(filename, sharedLocation+"base.html"))
+	tmpl := template.Must(template.ParseFiles(filename, SharedLocation+"base.html"))
 	pages[filename] = &Page{Title: title, Template: tmpl, Body: body}
 	return pages[filename]
 }
@@ -119,10 +122,10 @@ func LoadPage(w http.ResponseWriter, location string, title string) *Page {
 // BlankPage is used to load just the shared "mega" template
 func BlankPage(w http.ResponseWriter) *Page {
 	if page, ok := pages["blank"]; ok {
-		LoadPage(w, pageLocation, "blank")
+		LoadPage(w, PageLocation, "blank")
 		return page
 	}
-	tmpl := template.Must(template.ParseFiles(sharedLocation + "base.html"))
+	tmpl := template.Must(template.ParseFiles(SharedLocation + "base.html"))
 	pages["blank"] = &Page{Title: "", Template: tmpl, Body: []byte("")}
 	return pages["blank"]
 }
@@ -134,8 +137,8 @@ func BlankPage(w http.ResponseWriter) *Page {
 func DevHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/dev/"):]
 	//	if auth.IsConnected(r) {
-	delete(pages, pageLocation+title+".html")
-	p := LoadPage(w, pageLocation, title)
+	delete(pages, PageLocation+title+".html")
+	p := LoadPage(w, PageLocation, title)
 	RenderTemplate(w, p)
 	//	} else {
 	//		title = "/" + title

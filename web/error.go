@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// PageError is the additional information needed to display the error page
 type PageError struct {
 	Type        int
 	Description string
@@ -20,7 +21,7 @@ var definitions = map[int]string{
 func OnError(w http.ResponseWriter, status int) *Page {
 	log.Printf("%d", status)
 	w.WriteHeader(status)
-	p := LoadPage(w, sharedLocation, "error")
+	p := LoadPage(w, SharedLocation, "error")
 	p.Info = PageError{status, definitions[status]}
 	return p
 }
