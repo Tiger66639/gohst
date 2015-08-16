@@ -15,8 +15,7 @@ const backendLocation = "templates/backend/"
 // EditParams is a struct which holds the info needed to load a page into the
 // page editor
 type EditParams struct {
-	Title string
-	Body  []byte
+	Title, Body string
 }
 
 // BackendHandler is used to route backend specific pages
@@ -35,7 +34,7 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 		p := LoadPage(w, backendLocation, title)
 		toLoad := r.FormValue("p")
 		formPage := loadPageForEdit(w, toLoad)
-		p.Info = EditParams{toLoad, formPage.Body}
+		p.Info = EditParams{toLoad, string(formPage.Body)}
 		p.LoggedIn = true
 		RenderTemplate(w, p)
 		break
