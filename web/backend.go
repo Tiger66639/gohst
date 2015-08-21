@@ -31,22 +31,11 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch title {
 	case "edit":
-		p := LoadPage(w, backendLocation, title)
-		toLoad := r.FormValue("p")
-		formPage := loadPageForEdit(w, toLoad)
-		p.Info = EditParams{toLoad, string(formPage.Body)}
-		p.LoggedIn = true
-		RenderTemplate(w, p)
-		break
+		edit(w, r, title)
+		return
 	case "edit/submit":
-		formURL := r.FormValue("p")
-		formPage := loadPageForEdit(w, formURL)
-		formPage.Body = []byte(r.FormValue("body"))
-		formPage.Template = template.Must(template.New(title).Parse(string(formPage.Body)))
-		formPage.Template = template.Must(formPage.Template.ParseFiles("templates/base.html"))
-		pages[title] = formPage
-		http.Redirect(w, r, "/backend/manage", http.StatusFound)
-		break
+		submitEdit(w, r, title)
+		return
 	case "manage":
 		p := LoadPage(w, backendLocation, title)
 		p.LoggedIn = true
@@ -58,6 +47,25 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 		RenderTemplate(w, p)
 		break
 	}
+}
+
+func edit(w http.ResponseWriter, r *http.Request, title string) {
+	p := LoadPage(w, backendLocation, title)
+	toLoad := r.FormValue("p")
+	formPage := loadPageForEdit(w, toLoad)
+	p.Info = EditParams{toLoad, string(formPage.Body)}
+	p.LoggedIn = true
+	RenderTemplate(w, p)
+}
+
+func submitEdit(w http.ResponseWriter, r *http.Request, title string) {
+	formURL := r.FormValue("p")
+	formPage := loadPageForEdit(w, formURL)
+	formPage.Body = []byte(r.FormValue("body"))
+	formPage.Template = template.Must(template.New(title).Parse(string(formPage.Body)))
+	formPage.Template = template.Must(formPage.Template.ParseFiles("templates/base.html"))
+	pages[title] = formPage
+	http.Redirect(w, r, "/backend/manage", http.StatusFound)
 }
 
 /**
