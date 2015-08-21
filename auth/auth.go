@@ -2,7 +2,9 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"log"
 	"net/http"
 
@@ -23,9 +25,7 @@ var store = sessions.NewCookieStore([]byte(randomString(32)))
  */
 var sessionIDs = make(map[string]int)
 
-/**
- * Returns true if a valid session is present
- */
+// IsConnected returns true if a client is currently logged in
 func IsConnected(r *http.Request) bool {
 	session, _ := store.Get(r, "session-name")
 	if receipt, ok := session.Values["receipt"].(string); ok {
@@ -34,6 +34,24 @@ func IsConnected(r *http.Request) bool {
 		}
 	}
 	return false
+}
+
+// GenerateSalt returns a random 64 char string.
+func GenerateSalt() string {
+	return randomString(64)
+}
+
+// Hash takes a salt and provided string and returns their corresponding
+// combined sha256 string
+func Hash(salt, provided string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(provided))
+	first := hex.EncodeToString(hasher.Sum(nil))
+
+	hasher = sha256.New()
+	hasher.Write(append([]byte(first), salt...))
+
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 /**
