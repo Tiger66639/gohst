@@ -53,6 +53,10 @@ func IsConnected(r *http.Request) bool {
 // Connect creates a valid session if the correct authentication params
 // are provided
 func Connect(w http.ResponseWriter, r *http.Request) {
+	if len(r.FormValue("username")) < 6 || len(r.FormValue("password")) < 6 {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
 	session, _ := store.Get(r, "session-name")
 	title := r.FormValue("redirect")
 
@@ -87,6 +91,10 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	salt := randomString(32)
+	if len(r.FormValue("password")) < 6 || len(r.FormValue("username")) < 6 || len(r.FormValue("email")) < 6 {
+		http.Redirect(w, r, "/register", http.StatusFound)
+		return
+	}
 	user := &data.User{Salt: salt,
 		Hash:     Hash(salt, r.FormValue("password")),
 		Username: r.FormValue("username"),
