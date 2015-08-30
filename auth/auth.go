@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/cosban/gohst/data"
 	"github.com/gorilla/sessions"
@@ -24,11 +25,12 @@ var store = sessions.NewCookieStore([]byte(randomString(32)))
  * Privileges are represented by an integer but currently
  * don't mean anything.
  */
-var sessionIDs = make(map[string]int)
+var sessionIDs = make(map[string]string)
 
 // Hash takes a salt and provided string and returns their corresponding
 // combined sha256 string
 func Hash(salt, provided string) string {
+	log.Printf("%s\n%s", salt, provided)
 	hasher := sha256.New()
 	hasher.Write([]byte(provided))
 	first := hex.EncodeToString(hasher.Sum(nil))
@@ -54,19 +56,28 @@ func IsConnected(r *http.Request) bool {
 // are provided
 func Connect(w http.ResponseWriter, r *http.Request) {
 	if len(r.FormValue("username")) < 6 || len(r.FormValue("password")) < 6 {
+		log.Printf("username or password too small!")
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
+	username := strings.Trim(r.FormValue("username"), " ")
+	password := strings.Trim(r.FormValue("password"), " ")
 	session, _ := store.Get(r, "session-name")
 	title := r.FormValue("redirect")
+	salt, err := data.GetSalt(username)
+	if err != nil {
+		http.Redirect(w, r, title, http.StatusFound)
+		return
+	}
 
-	salt := data.GetSalt(r.FormValue("username"))
-	hash := Hash(salt, r.FormValue("password"))
-	if !data.DoHashesMatch(r.FormValue("username"), hash) {
-		log.Printf("invalid login attempt")
+	hash := Hash(salt, password)
+
+	if !data.DoHashesMatch(username, hash) {
+		log.Printf("invalid login attempt using: %s", username)
 	} else {
+		log.Printf("successful login using: %s", username)
 		receipt := randomString(32)
-		sessionIDs[receipt] = 1
+		sessionIDs[receipt] = username
 		session.Values["receipt"] = receipt
 		session.Save(r, w)
 		// on success we don't want to to the login page again...
@@ -74,6 +85,7 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 			title = "backend/manage"
 		}
 	}
+
 	http.Redirect(w, r, title, http.StatusFound)
 }
 
@@ -90,22 +102,21 @@ func Disconnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	salt := randomString(32)
+	salt := randomString(64)
+
 	if len(r.FormValue("password")) < 6 || len(r.FormValue("username")) < 6 || len(r.FormValue("email")) < 6 {
 		http.Redirect(w, r, "/register", http.StatusFound)
 		return
 	}
-	user := &data.User{Salt: salt,
-		Hash:     Hash(salt, r.FormValue("password")),
-		Username: r.FormValue("username"),
-		Email:    r.FormValue("email"),
-		Role:     "user"}
-	result := data.AddNewUser(user)
-	rows, _ := result.RowsAffected()
+
+	user := &data.User{Salt: salt, Hash: Hash(salt, r.FormValue("password")), Username: r.FormValue("username"), Email: r.FormValue("email"), Role: "user"}
+
+	rows, _ := data.AddNewUser(user).RowsAffected()
+
 	if rows != 1 {
-		// TODO: check if username is taken etc
 		log.Printf("OH NO THE ADDING THE USER DIDN'T AFFECT THE CORRECT AMOUNT OF ROWS!")
 	}
+
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
@@ -114,15 +125,4 @@ func randomString(length int) string {
 	b := make([]byte, length)
 	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)[:length]
-}
-
-func decodeBase64(s string) ([]byte, error) {
-	// add back missing padding
-	switch len(s) % 4 {
-	case 2:
-		s += "=="
-	case 3:
-		s += "="
-	}
-	return base64.URLEncoding.DecodeString(s)
 }

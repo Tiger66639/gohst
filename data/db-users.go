@@ -2,6 +2,8 @@ package data
 
 import (
 	"database/sql"
+	"log"
+
 	_ "github.com/lib/pq"
 )
 
@@ -13,13 +15,13 @@ type User struct {
 
 var db *sql.DB
 
-func GetSalt(username string) string {
+func GetSalt(username string) (string, error) {
 	var salt string
 	err := db.QueryRow("SELECT salt FROM AUTH WHERE username=$1", username).Scan(&salt)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	return salt
+	return salt, nil
 }
 
 func DoHashesMatch(username, provided string) bool {
@@ -28,6 +30,7 @@ func DoHashesMatch(username, provided string) bool {
 	if err != nil {
 		panic(err)
 	}
+	log.Printf("provided: %s\ncorrect:  %s", provided, actual)
 	return actual == provided
 }
 
