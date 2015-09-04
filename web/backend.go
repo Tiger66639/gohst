@@ -10,7 +10,7 @@ import (
 	"github.com/cosban/gohst/auth"
 )
 
-const backendLocation = "templates/backend/"
+const backendLocation = "templates/"
 
 // EditParams is a struct which holds the info needed to load a page into the
 // page editor
@@ -20,7 +20,7 @@ type EditParams struct {
 
 // BackendHandler is used to route backend specific pages
 func BackendHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/backend/"):]
+	title := r.URL.Path[len("/"):]
 	log.Printf(title)
 
 	if !auth.IsConnected(r) {
@@ -29,7 +29,7 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch title {
+	switch title[len("backend/"):] {
 	case "edit":
 		edit(w, r, title)
 		return

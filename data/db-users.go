@@ -2,7 +2,6 @@ package data
 
 import (
 	"database/sql"
-	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -30,7 +29,6 @@ func DoHashesMatch(username, provided string) bool {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("provided: %s\ncorrect:  %s", provided, actual)
 	return actual == provided
 }
 
