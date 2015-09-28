@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/cosban/gohst/auth"
+	"github.com/cosban/gohst/data"
 )
 
 const backendLocation = "templates/"
@@ -16,6 +17,10 @@ const backendLocation = "templates/"
 // page editor
 type EditParams struct {
 	Title, Body string
+}
+
+type ManageParams struct {
+	Pages []*data.Page
 }
 
 // BackendHandler is used to route backend specific pages
@@ -32,20 +37,17 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 	switch title[len("backend/"):] {
 	case "edit":
 		edit(w, r, title)
-		return
 	case "edit/submit":
 		submitEdit(w, r, title)
-		return
+	case "":
+		title = "backend/manage"
+		fallthrough
 	case "manage":
+		manage(w, r, title)
+	default:
 		p := LoadPage(w, backendLocation, title)
 		p.LoggedIn = true
 		RenderTemplate(w, p)
-		break
-	default:
-		p := LoadPage(w, backendLocation, "manage")
-		p.LoggedIn = true
-		RenderTemplate(w, p)
-		break
 	}
 }
 
@@ -66,6 +68,17 @@ func submitEdit(w http.ResponseWriter, r *http.Request, title string) {
 	formPage.Template = template.Must(formPage.Template.ParseFiles("templates/base.html"))
 	pages[title] = formPage
 	http.Redirect(w, r, "/backend/manage", http.StatusFound)
+}
+
+func manage(w http.ResponseWriter, r *http.Request, title string) {
+	p := LoadPage(w, backendLocation, title)
+	pages, err := data.GetAllPages()
+	if err != nil {
+		panic(err)
+	}
+	p.Info = ManageParams{pages}
+	p.LoggedIn = true
+	RenderTemplate(w, p)
 }
 
 /**

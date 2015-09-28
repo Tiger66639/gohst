@@ -30,7 +30,6 @@ var sessionIDs = make(map[string]string)
 // Hash takes a salt and provided string and returns their corresponding
 // combined sha256 string
 func Hash(salt, provided string) string {
-	log.Printf("%s\n%s", salt, provided)
 	hasher := sha256.New()
 	hasher.Write([]byte(provided))
 	first := hex.EncodeToString(hasher.Sum(nil))

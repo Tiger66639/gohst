@@ -14,8 +14,6 @@ import (
 // publicly accessable page.
 // Each Page is cached within the map pages after first load in order to reduce
 // the time it takes to load it in the future.
-// TODO: this needs to also contain an interface which will allow pages to have
-// custom data
 type Page struct {
 	// The title of the page and its filename
 	Title string
