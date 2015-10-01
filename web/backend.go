@@ -65,7 +65,7 @@ func submitEdit(w http.ResponseWriter, r *http.Request, title string) {
 	formPage := loadPageForEdit(w, formURL)
 	formPage.Body = []byte(r.FormValue("body"))
 	formPage.Template = template.Must(template.New(title).Parse(string(formPage.Body)))
-	formPage.Template = template.Must(formPage.Template.ParseFiles("templates/base.html"))
+	formPage.Template = template.Must(formPage.Template.ParseFiles("templates/shared/base.html"))
 	pages[title] = formPage
 	http.Redirect(w, r, "/backend/manage", http.StatusFound)
 }

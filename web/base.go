@@ -134,12 +134,12 @@ func BlankPage(w http.ResponseWriter) *Page {
 // page
 func DevHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/dev/"):]
-	//	if auth.IsConnected(r) {
-	delete(pages, PageLocation+title+".html")
-	p := LoadPage(w, PageLocation, title)
-	RenderTemplate(w, p)
-	//	} else {
-	//		title = "/" + title
-	//		http.Redirect(w, r, title, http.StatusFound)
-	//	}
+	if auth.IsConnected(r) {
+		delete(pages, PageLocation+title+".html")
+		p := LoadPage(w, PageLocation, title)
+		RenderTemplate(w, p)
+	} else {
+		title = "/" + title
+		http.Redirect(w, r, title, http.StatusFound)
+	}
 }

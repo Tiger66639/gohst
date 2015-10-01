@@ -27,5 +27,4 @@ method to run is in the following manner:
     fi
     gohst > log 2> err &
 
-This script can also be found at [gohst-example](https://github.com/cosban/gohst-example/master/start.sh)
-You can also view a website running gohst at [cosban.net](https://cosban.net)
+You may also visit [cosban.net](https://cosban.net) which will always be running the latest version of gohst.

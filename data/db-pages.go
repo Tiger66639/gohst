@@ -15,7 +15,7 @@ type Page struct {
 func GetAllPages() ([]*Page, error) {
 	var count int
 	_ = db.QueryRow("SELECT COUNT(*) FROM PAGES").Scan(&count)
-	rows, err := db.Query("SELECT * FROM PAGES")
+	rows, err := db.Query("SELECT * FROM PAGES ORDER BY pageid DESC")
 	defer rows.Close()
 	if err != nil {
 		return nil, err
