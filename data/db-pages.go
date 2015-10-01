@@ -7,9 +7,9 @@ import (
 )
 
 type Page struct {
-	PageId   int
-	Title    string
-	Disabled bool
+	PageId             int
+	Title, Description string
+	Disabled           bool
 }
 
 func GetAllPages() ([]*Page, error) {
@@ -24,13 +24,13 @@ func GetAllPages() ([]*Page, error) {
 	i := 0
 	for rows.Next() {
 		var pageid int
-		var title string
+		var title, description string
 		var disabled bool
-		err = rows.Scan(&pageid, &title, &disabled)
+		err = rows.Scan(&pageid, &title, &disabled, &description)
 		if err != nil {
 			return nil, err
 		}
-		pages[i] = &Page{pageid, title, disabled}
+		pages[i] = &Page{pageid, title, description, disabled}
 		i++
 	}
 	return pages, err

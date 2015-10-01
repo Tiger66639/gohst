@@ -10,7 +10,7 @@ import (
 	"github.com/cosban/gohst/auth"
 )
 
-// Page is a sruct of all of the data needed to serve and display a
+// Page is a struct of all of the data needed to serve and display a
 // publicly accessable page.
 // Each Page is cached within the map pages after first load in order to reduce
 // the time it takes to load it in the future.
