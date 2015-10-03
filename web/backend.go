@@ -2,7 +2,6 @@ package web
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"text/template"
@@ -23,10 +22,16 @@ type ManageParams struct {
 	Pages []*data.Page
 }
 
+var routes = map[string]func(http.ResponseWriter, *http.Request, string){
+	"edit":        edit,
+	"edit/submit": submitEdit,
+	"manage":      manage,
+	"":            manage,
+}
+
 // BackendHandler is used to route backend specific pages
 func BackendHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
-	log.Printf(title)
 
 	if !auth.IsConnected(r) {
 		login := LoadPage(w, PageLocation, "login")
@@ -34,17 +39,12 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch title[len("backend/"):] {
-	case "edit":
-		edit(w, r, title)
-	case "edit/submit":
-		submitEdit(w, r, title)
-	case "":
-		title = "backend/manage"
-		fallthrough
-	case "manage":
-		manage(w, r, title)
-	default:
+	if route, ok := routes[title[len("backend/"):]]; ok {
+		if len(title[len("backend/"):]) == 0 {
+			title = "backend/manage"
+		}
+		route(w, r, title)
+	} else {
 		p := LoadPage(w, backendLocation, title)
 		p.LoggedIn = true
 		RenderTemplate(w, p)
