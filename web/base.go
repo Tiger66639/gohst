@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/cosban/gohst/auth"
+	"github.com/cosban/gohst/data"
 )
 
 // Page is a struct of all of the data needed to serve and display a
@@ -24,7 +25,9 @@ type Page struct {
 	// Info is an interface which allows for additional data to be fed into pages
 	Info interface{}
 	// Whether the page is enabled or not
-	Disabled, LoggedIn bool
+	Disabled bool
+
+	User *data.User
 }
 
 // SharedLocation is where shared templates are (errors, base, etc)
@@ -38,7 +41,8 @@ const PageLocation string = "templates/public/"
 var pages = make(map[string]*Page)
 
 // RenderTemplate executes templates which have been stored within the pages map
-func RenderTemplate(w http.ResponseWriter, page *Page) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, page *Page) {
+	page.User = auth.GetConnectedUser(r)
 	page.Template.ExecuteTemplate(w, "base", page)
 }
 
@@ -51,7 +55,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		PageHandler(w, r)
 		return
 	}
-	RenderTemplate(w, LoadPage(w, PageLocation, "login"))
+	RenderTemplate(w, r, LoadPage(w, PageLocation, "login"))
 }
 
 // StaticHandler provides a way for static content to be served to clients.
@@ -78,8 +82,7 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		p = LoadPage(w, PageLocation, title)
 	}
-	p.LoggedIn = auth.IsConnected(r)
-	RenderTemplate(w, p)
+	RenderTemplate(w, r, p)
 }
 
 func baseTemplate() *template.Template {
@@ -137,7 +140,7 @@ func DevHandler(w http.ResponseWriter, r *http.Request) {
 	if auth.IsConnected(r) {
 		delete(pages, PageLocation+title+".html")
 		p := LoadPage(w, PageLocation, title)
-		RenderTemplate(w, p)
+		RenderTemplate(w, r, p)
 	} else {
 		title = "/" + title
 		http.Redirect(w, r, title, http.StatusFound)

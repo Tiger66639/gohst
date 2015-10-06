@@ -23,7 +23,7 @@ func RawHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/txt/"):]
 	p, err := loadRaw(w, title)
 	if err != nil {
-		RenderTemplate(w, OnError(w, 404))
+		RenderTemplate(w, r, OnError(w, 404))
 		return
 	}
 	fmt.Fprintf(w, "%s", p.Body)

@@ -22,11 +22,16 @@ type ManageParams struct {
 	Pages []*data.Page
 }
 
+type UserlistParams struct {
+	Users []*data.User
+}
+
 var routes = map[string]func(http.ResponseWriter, *http.Request, string){
+	"users":       users,
 	"edit":        edit,
 	"edit/submit": submitEdit,
 	"manage":      manage,
-	"":            manage,
+	"":            users,
 }
 
 // BackendHandler is used to route backend specific pages
@@ -35,20 +40,29 @@ func BackendHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !auth.IsConnected(r) {
 		login := LoadPage(w, PageLocation, "login")
-		RenderTemplate(w, login)
+		RenderTemplate(w, r, login)
 		return
 	}
 
 	if route, ok := routes[title[len("backend/"):]]; ok {
 		if len(title[len("backend/"):]) == 0 {
-			title = "backend/manage"
+			title = "backend/users"
 		}
 		route(w, r, title)
 	} else {
 		p := LoadPage(w, backendLocation, title)
-		p.LoggedIn = true
-		RenderTemplate(w, p)
+		RenderTemplate(w, r, p)
 	}
+}
+
+func users(w http.ResponseWriter, r *http.Request, title string) {
+	p := LoadPage(w, backendLocation, title)
+	users, err := data.GetAllUsers(0)
+	if err != nil {
+		panic(err)
+	}
+	p.Info = UserlistParams{users}
+	RenderTemplate(w, r, p)
 }
 
 func edit(w http.ResponseWriter, r *http.Request, title string) {
@@ -56,8 +70,7 @@ func edit(w http.ResponseWriter, r *http.Request, title string) {
 	toLoad := r.FormValue("p")
 	formPage := loadPageForEdit(w, toLoad)
 	p.Info = EditParams{toLoad, string(formPage.Body)}
-	p.LoggedIn = true
-	RenderTemplate(w, p)
+	RenderTemplate(w, r, p)
 }
 
 func submitEdit(w http.ResponseWriter, r *http.Request, title string) {
@@ -77,8 +90,7 @@ func manage(w http.ResponseWriter, r *http.Request, title string) {
 		panic(err)
 	}
 	p.Info = ManageParams{pages}
-	p.LoggedIn = true
-	RenderTemplate(w, p)
+	RenderTemplate(w, r, p)
 }
 
 /**

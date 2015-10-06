@@ -25,7 +25,7 @@ var store = sessions.NewCookieStore([]byte(randomString(32)))
  * Privileges are represented by an integer but currently
  * don't mean anything.
  */
-var sessionIDs = make(map[string]string)
+var sessionIDs = make(map[string]int)
 
 // Hash takes a salt and provided string and returns their corresponding
 // combined sha256 string
@@ -51,6 +51,15 @@ func IsConnected(r *http.Request) bool {
 	return false
 }
 
+func GetConnectedUser(r *http.Request) *data.User {
+	session, _ := store.Get(r, "session-name")
+	if receipt, ok := session.Values["receipt"].(string); ok {
+		user, _ := data.GetUserFromId(sessionIDs[receipt])
+		return user
+	}
+	return nil
+}
+
 // Connect creates a valid session if the correct authentication params
 // are provided
 func Connect(w http.ResponseWriter, r *http.Request) {
@@ -71,12 +80,10 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 
 	hash := Hash(salt, password)
 
-	if !data.DoHashesMatch(username, hash) {
-		log.Printf("invalid login attempt using: %s", username)
-	} else {
-		log.Printf("successful login using: %s", username)
+	if data.DoHashesMatch(username, hash) {
 		receipt := randomString(32)
-		sessionIDs[receipt] = username
+		userid := data.GetUserId(username)
+		sessionIDs[receipt] = userid
 		session.Values["receipt"] = receipt
 		session.Save(r, w)
 		// on success we don't want to to the login page again...
