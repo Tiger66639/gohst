@@ -14,7 +14,7 @@ type UserlistParams struct {
 }
 
 type EditParams struct {
-	Tytle, Body string
+	Title, Body string
 }
 
 type ManageParams struct {
