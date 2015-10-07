@@ -1,10 +1,13 @@
 package web
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
+
+type RawParams struct {
+	Text string
+}
 
 // loadtxt attempts to inject a .txt file into the "raw" template.
 // If the .txt file does not exist, a 404 page is displayed.
@@ -13,18 +16,21 @@ func loadRaw(w http.ResponseWriter, title string) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Page{Title: title, Body: []byte("<html><body><pre>" + string(body) + "</pre></body></html>")}, nil
+	p := LoadPage(w, SharedLocation, "raw")
+	p.Title = title
+	p.Info = RawParams{string(body)}
+	return p, nil
 }
 
 // RawHandler is used for static .txt documents.
 // Renders the 404 page upon error.
-// TODO: RenderTemplate needs to be cloned into a RenderRawTemplate
 func RawHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/txt/"):]
 	p, err := loadRaw(w, title)
 	if err != nil {
+		panic(err)
 		RenderTemplate(w, r, OnError(w, 404))
 		return
 	}
-	fmt.Fprintf(w, "%s", p.Body)
+	RenderTemplate(w, r, p)
 }

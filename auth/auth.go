@@ -86,9 +86,8 @@ func Connect(w http.ResponseWriter, r *http.Request) {
 		sessionIDs[receipt] = userid
 		session.Values["receipt"] = receipt
 		session.Save(r, w)
-		// on success we don't want to to the login page again...
 		if title == "login" {
-			title = "backend/manage"
+			title = "backend/"
 		}
 	}
 
