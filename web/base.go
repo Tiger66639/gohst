@@ -36,6 +36,14 @@ const SharedLocation string = "templates/shared/"
 // PageLocation is where public templates are
 const PageLocation string = "templates/public/"
 
+var feeds = map[string]func(http.ResponseWriter, *http.Request) interface{}{
+	"backend/users":  FeedUsers,
+	"backend/edit":   FeedEdit,
+	"backend/manage": FeedManage,
+	//"profile":        FeedProfile,
+	//	"backend/edit/submit": submitEdit,
+}
+
 // pages is a map of pages keyed by the location of the page.
 // The "home" page, would be keyed as ""/templates/public/home" for instance.
 var pages = make(map[string]*Page)
@@ -76,11 +84,26 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 	if len(title) == 0 {
 		title = "home"
 	}
+	// Check if they are attempting to view the backend... must be logged in to do that
+	// TODO: there should be a flag that says "this page requires login"
+	if strings.HasPrefix(title, "backend/") && !auth.IsConnected(r) {
+		login := LoadPage(w, PageLocation, "login")
+		RenderTemplate(w, r, login)
+		return
+	}
 	var p *Page
+	if strings.HasSuffix(title, "backend") || strings.HasSuffix(title, "backend/") {
+		title = "backend/users"
+	}
+
 	if title == "base" {
 		p = OnError(w, 404)
 	} else {
 		p = LoadPage(w, PageLocation, title)
+	}
+	//check if page needs to be fed any data before being rendered (pretty much all of the backend and some public pages)
+	if f, ok := feeds[title]; ok {
+		p.Info = f(w, r)
 	}
 	RenderTemplate(w, r, p)
 }
