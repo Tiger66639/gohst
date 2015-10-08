@@ -38,6 +38,7 @@ func main() {
 	http.HandleFunc("/static/", web.StaticHandler)
 	http.HandleFunc("/txt/", web.RawHandler)
 	http.HandleFunc("/dev/", web.DevHandler)
+	http.HandleFunc("/backend/edit/submit", web.SubmitEdit)
 
 	http.HandleFunc("/connect", auth.Connect)
 	http.HandleFunc("/register/submit", auth.RegisterUser)

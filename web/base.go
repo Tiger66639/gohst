@@ -40,7 +40,7 @@ var feeds = map[string]func(http.ResponseWriter, *http.Request) interface{}{
 	"backend/users":  FeedUsers,
 	"backend/edit":   FeedEdit,
 	"backend/manage": FeedManage,
-	//"profile":        FeedProfile,
+	"profile":        FeedProfile,
 	//	"backend/edit/submit": submitEdit,
 }
 
@@ -78,7 +78,7 @@ func StaticHandler(w http.ResponseWriter, r *http.Request) {
 	PageHandler(w, r)
 }
 
-// PageHandler is the standard
+// PageHandler is the standard page loader
 func PageHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/"):]
 	if len(title) == 0 {
@@ -102,7 +102,7 @@ func PageHandler(w http.ResponseWriter, r *http.Request) {
 		p = LoadPage(w, PageLocation, title)
 	}
 	//check if page needs to be fed any data before being rendered (pretty much all of the backend and some public pages)
-	if f, ok := feeds[title]; ok {
+	if f, ok := feeds[title]; ok && auth.IsConnected(r) {
 		p.Info = f(w, r)
 	}
 	RenderTemplate(w, r, p)
@@ -162,8 +162,7 @@ func DevHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/dev/"):]
 	if auth.IsConnected(r) {
 		delete(pages, PageLocation+title+".html")
-		p := LoadPage(w, PageLocation, title)
-		RenderTemplate(w, r, p)
+		PageHandler(w, r)
 	} else {
 		title = "/" + title
 		http.Redirect(w, r, title, http.StatusFound)

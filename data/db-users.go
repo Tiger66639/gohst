@@ -11,7 +11,7 @@ import (
 type User struct {
 	Userid int
 
-	Username, Email, Role, Joined, Salt, Hash string
+	Username, Email, Role, Joined, Salt, Hash, Signature string
 }
 
 func GetSalt(username string) (string, error) {
@@ -50,14 +50,14 @@ func RemoveUser(userid int) sql.Result {
 	return result
 }
 
-func GetUserFromId(id int) (*User, error) {
-	var username, email, role string
+func GetUserFromId(id int) *User {
+	var username, email, role, signature string
 	var joined time.Time
-	err := db.QueryRow("SELECT username, email, role, joined from users WHERE userid=$1;", id).Scan(&username, &email, &role, &joined)
+	err := db.QueryRow("SELECT username, email, role, joined, signature from users WHERE userid=$1;", id).Scan(&username, &email, &role, &joined, &signature)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	return &User{id, username, email, role, fmt.Sprintf("%d-%02d-%02d", joined.Year(), joined.Month(), joined.Day()), "", ""}, nil
+	return &User{id, username, email, role, fmt.Sprintf("%d-%02d-%02d", joined.Year(), joined.Month(), joined.Day()), "", "", signature}
 }
 
 func GetUserId(username string) int {
@@ -69,13 +69,13 @@ func GetUserId(username string) int {
 	return userid
 }
 
-func GetAllUsers(page int) ([]*User, error) {
+func GetAllUsers(page int) []*User {
 	var count int
 	_ = db.QueryRow("SELECT COUNT(*) FROM USERS").Scan(&count)
 	rows, err := db.Query("SELECT userid, username, email, role, joined FROM USERS ORDER BY userid offset $1 rows fetch next 50 rows only;", page)
 	defer rows.Close()
 	if err != nil {
-		return nil, err
+		return nil
 	}
 	var users = make([]*User, count)
 	i := 0
@@ -85,10 +85,10 @@ func GetAllUsers(page int) ([]*User, error) {
 		var joined time.Time
 		err = rows.Scan(&userid, &username, &email, &role, &joined)
 		if err != nil {
-			return nil, err
+			return nil
 		}
-		users[i] = &User{userid, username, email, role, fmt.Sprintf("%d-%02d-%02d", joined.Year(), joined.Month(), joined.Day()), "", ""}
+		users[i] = &User{userid, username, email, role, fmt.Sprintf("%d-%02d-%02d", joined.Year(), joined.Month(), joined.Day()), "", "", ""}
 		i++
 	}
-	return users, err
+	return users
 }

@@ -54,7 +54,7 @@ func IsConnected(r *http.Request) bool {
 func GetConnectedUser(r *http.Request) *data.User {
 	session, _ := store.Get(r, "session-name")
 	if receipt, ok := session.Values["receipt"].(string); ok {
-		user, _ := data.GetUserFromId(sessionIDs[receipt])
+		user := data.GetUserFromId(sessionIDs[receipt])
 		return user
 	}
 	return nil

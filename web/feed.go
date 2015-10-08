@@ -3,9 +3,11 @@ package web
 import (
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/cosban/gohst/auth"
 	"github.com/cosban/gohst/data"
 )
 
@@ -21,12 +23,12 @@ type ManageParams struct {
 	Pages []*data.Page
 }
 
+type ProfileParams struct {
+	User *data.User
+}
+
 func FeedUsers(w http.ResponseWriter, r *http.Request) interface{} {
-	users, err := data.GetAllUsers(0)
-	if err != nil {
-		panic(err)
-	}
-	return UserlistParams{users}
+	return UserlistParams{data.GetAllUsers(0)}
 }
 
 func FeedEdit(w http.ResponseWriter, r *http.Request) interface{} {
@@ -41,6 +43,21 @@ func FeedManage(w http.ResponseWriter, r *http.Request) interface{} {
 		panic(err)
 	}
 	return ManageParams{pages}
+}
+
+func FeedProfile(w http.ResponseWriter, r *http.Request) interface{} {
+	var user *data.User
+	var err error
+	var i int
+	i, err = strconv.Atoi(r.FormValue("u"))
+	if err != nil {
+		i = 0
+	}
+	user = data.GetUserFromId(i)
+	if user == nil {
+		user = auth.GetConnectedUser(r)
+	}
+	return ProfileParams{user}
 }
 
 // Loads a page from the cache, if page isn't in cache, loads the blank page
