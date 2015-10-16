@@ -9,8 +9,8 @@ on port 8000
 
 To install, simply run the following
 
-    $ go get github.com/cosban/gohst
-    $ cd $GOPATH/src/github.com/cosban/gohst && go install
+    $ go get github.com/Tiger66639/gohst
+    $ cd $GOPATH/src/github.com/Tiger66639/gohst && go install
 
 Once this has been done, cd into the directory containing your static and
 template directories then run the following:
